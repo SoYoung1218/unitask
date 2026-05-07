@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:task_app/models/auth_data.dart';
 
 class ApiService {
   static final String _hostUrl = 'https://daelim.fleecy.dev/functions/v1';
   static final String _signupUrl = '$_hostUrl/students/signup';
+  static final String _loginUrl = '$_hostUrl/students/loginUrl';
 
   static bool _enableOnce = false;
 
@@ -24,6 +26,7 @@ class ApiService {
         'name' : name,
       }),
     );
+
     final statusCode = response.statusCode;
 
     _enableOnce = false;
@@ -36,5 +39,29 @@ class ApiService {
     }
 
     return true;
+  }
+
+  static Future<AuthData?> login({
+    required String email,
+    required String password,
+  }) async {
+    final response = await http.post(
+      Uri.parse(_loginUrl),
+      body: jsonEncode({
+        'email' : email,
+        'password' : password,
+      }),
+    );
+
+    final statusCode = response.statusCode;
+
+    if (statusCode != 200){
+      debugPrint('로그인 API 에러: ${response.body}');
+      return null;
+    }
+
+    debugPrint('로그인 API 성공');
+
+     return AuthData.fromJson(response.body);
   }
 }

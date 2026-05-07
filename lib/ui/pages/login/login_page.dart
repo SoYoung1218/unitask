@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:task_app/app/extensions/sized_box_extension.dart';
+import 'package:task_app/app/extensions/snackbar_extension.dart';
 import 'package:task_app/app/router/app_page.dart';
+import 'package:task_app/services/api_services.dart';
 import 'package:task_app/ui/common/label_text_field.dart';
 import 'package:task_app/ui/common/text_divider.dart';
-/* import 'package:task_app/app/extensions/snackbar_extension.dart'; */
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,11 +16,55 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  final _emailController = TextEditingController();
+  final TextEditingController _pwController = .new();
+
+  @override
+  void dispose () {
+    _emailController.dispose();
+    _pwController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _onLogin() async {
+    final email = _emailController.text.trim();
+    final password = _pwController.text.trim();
+
+    //이메일/비밀번호 값 검증
+    if (email.isEmpty || password.isEmpty){
+      return context.showSnackbar(
+        '이메일 또는 비밀번호를 입력해주세요',
+        isError: true,
+      );
+    }
+
+    final response = await ApiService.login (
+      email: email,
+      password: password,
+    );
+
+    // 로그인 실패 에러 스낵바
+    if (response == null ) {
+      if (mounted) {
+        context.showSnackbar(
+          '로그인을 실패했습니다',
+          isError: true,
+        );
+      }
+      return;
+    }
+
+    // TODO:로그인 성공 => 메인 화면 이동
+    if (mounted) {
+      context.goNamed(AppPage.home.name);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Padding(
-        padding: .all(20),
+        padding: const .all(20),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
@@ -34,17 +79,23 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               Text('과제 관리를 스마트하게'),
+
               50.heightBox,
             
+              //이메일
               LabelTextField(
+                controller: _emailController,
                 label: '이메일', 
                 hintText: 'example@naver.com',
                 icon: LucideIcons.mail,
               ),
             
               20.heightBox,
-            
-              LabelTextField(label: '비밀번호',
+
+              //비밀번호
+              LabelTextField(
+              controller: _pwController,
+              label: '비밀번호',
               hintText: '000000',
               icon: LucideIcons.lockKeyhole,
               enableObscure: true,
@@ -59,17 +110,20 @@ class _LoginPageState extends State<LoginPage> {
                   ),
               ),
                    
-                  20.heightBox,
+              20.heightBox,
             
             
               //로그인 버튼
               SizedBox(
                 width: .infinity,
                 child: ElevatedButton(
-                  onPressed: () {},
-                  child: Text(
+                  onPressed: _onLogin,
+                  child: const Text(
                     '로그인',
-                    style: TextStyle(fontWeight: .bold, fontSize: 20),
+                    style: TextStyle(
+                      fontWeight: .bold, 
+                      fontSize: 20
+                      ),
                   ),
                 ),
               ),

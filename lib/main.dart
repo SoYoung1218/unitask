@@ -18,7 +18,7 @@ class UniTaskApp extends StatelessWidget {
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
       routerConfig: appRouter,
+      /*debugShowCheckedModeBanner: false, 애뮬 상단 위 디버그 지우는 법*/
     );
   }
 }
-//aa

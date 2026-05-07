@@ -12,6 +12,11 @@ class AppTheme {
     appBarTheme: AppBarTheme(
       backgroundColor: Colors.white,
       foregroundColor: Colors.black,
+      titleTextStyle: TextStyle(
+        fontWeight: .bold,
+        color: Colors.black,
+        fontSize: 24,
+      ),
     ),
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       foregroundColor: Colors.white,
@@ -46,11 +51,21 @@ class AppTheme {
     brightness: Brightness.dark,
     visualDensity: VisualDensity.adaptivePlatformDensity,
     scaffoldBackgroundColor: _darkBackground,
+    appBarTheme: const AppBarTheme(
+      backgroundColor: Color(0xFF111827),
+      foregroundColor: Colors.white,
+      titleTextStyle: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        fontSize: 24,
+      ), // TextStyle
+    ), // AppBarTheme
 
     // FloatingActionButton 설정
     floatingActionButtonTheme: const FloatingActionButtonThemeData(
       foregroundColor: Colors.white,
       backgroundColor: _primaryColor,
+      
     ),
 
     // TextButton 설정
