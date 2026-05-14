@@ -1,26 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:task_app/app/extensions/sized_box_extension.dart';
-import 'package:task_app/app/extensions/snackbar_extension.dart';
+import 'package:task_app/core/extensions/sized_box_extension.dart';
+import 'package:task_app/core/extensions/build_context_extension.dart';
 import 'package:task_app/app/router/app_page.dart';
-import 'package:task_app/services/api_services.dart';
+import 'package:task_app/core/models/result.dart';
+import 'package:task_app/features/auth/auth_provider.dart';
+import 'package:task_app/services/auth_api_services.dart';
 import 'package:task_app/ui/common/label_text_field.dart';
 import 'package:task_app/ui/common/text_divider.dart';
 
-class LoginPage extends StatefulWidget {
+class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
 
   @override
-  State<LoginPage> createState() => _LoginPageState();
+  ConsumerState<LoginPage> createState() => _LoginPageState();
 }
 
-class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
+class _LoginPageState extends ConsumerState<LoginPage> {
   final TextEditingController _pwController = .new();
+  final _emailController = TextEditingController();
 
   @override
-  void dispose () {
+  void dispose() {
     _emailController.dispose();
     _pwController.dispose();
     super.dispose();
@@ -30,121 +33,120 @@ class _LoginPageState extends State<LoginPage> {
     final email = _emailController.text.trim();
     final password = _pwController.text.trim();
 
-    //이메일/비밀번호 값 검증
-    if (email.isEmpty || password.isEmpty){
-      return context.showSnackbar(
-        '이메일 또는 비밀번호를 입력해주세요',
-        isError: true,
-      );
+    // 이메일 및 비밀번호 빈칸 확인
+    if (email.isEmpty || password.isEmpty) {
+      return context.showSnackbar('이메일 또는 비밀번호를 입력해주세요', isError: true);
     }
 
-    final response = await ApiService.login (
-      email: email,
-      password: password,
-    );
+    final result = await ref
+        .read(authProvider.notifier)
+        .login(email: email, password: password);
 
-    // 로그인 실패 에러 스낵바
-    if (response == null ) {
-      if (mounted) {
-        context.showSnackbar(
-          '로그인을 실패했습니다',
-          isError: true,
-        );
-      }
-      return;
-    }
 
-    // TODO:로그인 성공 => 메인 화면 이동
-    if (mounted) {
-      context.goNamed(AppPage.home.name);
-    }
+     switch (result) {
+      case Success():
+        if (mounted) context.goNamed(AppPage.home.name);
+      case Failure(:final exception):
+        if (mounted) {
+          context.showSnackbar(
+            exception.toString(),
+            isError: true
+          );
+        }
+     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final loading = ref.watch(authProvider).isLoading;
     return Scaffold(
       body: Padding(
-        padding: const .all(20),
+        padding: const EdgeInsets.all(20),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: .min,
               children: [
-                Icon(LucideIcons.graduationCap, size: 50),
-              Text(
-                'UniTask',
-                  style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: .bold
+                const Icon(LucideIcons.graduationCap),
+                const Text(
+                  'UniTask',
+                  style: TextStyle(fontWeight: .bold, fontSize: 28),
                 ),
-              ),
-              Text('과제 관리를 스마트하게'),
 
-              50.heightBox,
-            
-              //이메일
-              LabelTextField(
-                controller: _emailController,
-                label: '이메일', 
-                hintText: 'example@naver.com',
-                icon: LucideIcons.mail,
-              ),
-            
-              20.heightBox,
+                const Text('과제 관리를 스마트하게'),
 
-              //비밀번호
-              LabelTextField(
-              controller: _pwController,
-              label: '비밀번호',
-              hintText: '000000',
-              icon: LucideIcons.lockKeyhole,
-              enableObscure: true,
-              ),
-            
-              //패스워드 찾기 버튼
-              Align(
-                alignment: .centerRight,
-                child: TextButton(
-                  onPressed: (){},
-                    child: Text('비밀번호를 잊으셨나요?'),
-                  ),
-              ),
-                   
-              20.heightBox,
-            
-            
-              //로그인 버튼
-              SizedBox(
-                width: .infinity,
-                child: ElevatedButton(
-                  onPressed: _onLogin,
-                  child: const Text(
-                    '로그인',
-                    style: TextStyle(
-                      fontWeight: .bold, 
-                      fontSize: 20
-                      ),
+                50.heightBox,
+
+                // 이메일 입력창
+                LabelTextField(
+                  controller: _emailController,
+                  label: '이메일',
+                  hintText: 'example@university.deu',
+                  icon: LucideIcons.mail,
+                ),
+
+                20.heightBox,
+
+                // 비밀번호 입력창
+                LabelTextField(
+                  controller: _pwController,
+                  label: '비밀번호',
+                  hintText: '000000',
+                  icon: LucideIcons.lockKeyhole,
+                  enableObscure: true,
+                ),
+
+                // 패스워드 찾기 버튼
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () {
+                      context.showSnackbar('곧 기능을 출시합니다!');
+                    },
+                    child: const Text('비밀번호를 잊으셨나요?'),
                   ),
                 ),
-              ),
-            
-              20.heightBox,
-            
-              const TextDivider(text: '또는'),
-            
-              20.heightBox,
-            
-            Row(
-              mainAxisSize: .min,
+
+                20.heightBox,
+
+                // 로그인 버튼
+                SizedBox(
+                  width: .infinity,
+                  child: ElevatedButton.icon(
+                    onPressed: loading ? null : _onLogin,
+                    icon: loading 
+                        ?  SizedBox.square(
+                          dimension: 14,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                    ) :null,
+                    label: const Text(
+                      '로그인',
+                      style: TextStyle(fontSize: 18, fontWeight: .bold),
+                    ),
+                  ),
+                ),
+
+                20.heightBox,
+
+                const TextDivider(text: '또는'),
+
+                20.heightBox,
+
+                // 회원가입 안내
+                Row(
+                  mainAxisSize: .min,
                   children: [
-                    Text('계정이 없으신가요?'),
+                    const Text('계정이 없으신가요?'),
                     TextButton(
                       onPressed: () {
                         context.pushNamed(AppPage.signup.name);
                       },
                       child: const Text('회원가입'),
-                    ), //TextButton
-                   ],
+                    ),
+                  ],
                 ),
               ],
             ),

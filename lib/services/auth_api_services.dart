@@ -1,22 +1,20 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:task_app/app/app_strings.dart';
+import 'package:task_app/core/models/result.dart';
 import 'package:task_app/models/auth_data.dart';
 
-class ApiService {
-  static final String _hostUrl = 'https://daelim.fleecy.dev/functions/v1';
-  static final String _signupUrl = '$_hostUrl/students/signup';
-  static final String _loginUrl = '$_hostUrl/students/loginUrl';
+class AuthApiServices {
+  final String _signupUrl = '${AppStrings.apiHostUrl}/students/signup';
+  final String _loginUrl = '${AppStrings.apiHostUrl}/students/loginUrl';
 
-  static bool _enableOnce = false;
-
-  static Future<bool?> signup({
+   Future<Result<void>> signup({
     required String email,
     required String password,
     required String name,
   }) async {
-    if (_enableOnce) return null;
-    _enableOnce = true;
+    try {
 
     final response = await http.post(
       Uri.parse(_signupUrl),
@@ -29,22 +27,22 @@ class ApiService {
 
     final statusCode = response.statusCode;
 
-    _enableOnce = false;
-
-    debugPrint('Response[$statusCode]: ${response.body}');
-
     if (statusCode != 200) {
-      debugPrint('에러');
-      return false ;
+      return Failure(Exception('계정 생성을 실패했습니다.')) ;
     }
 
-    return true;
+    return Success(null);
+    } on Exception catch (e) {
+      return Failure(e);
+    }
   }
 
-  static Future<AuthData?> login({
+
+   Future<Result<AuthData?>> login({
     required String email,
     required String password,
   }) async {
+    try {
     final response = await http.post(
       Uri.parse(_loginUrl),
       body: jsonEncode({
@@ -57,11 +55,14 @@ class ApiService {
 
     if (statusCode != 200){
       debugPrint('로그인 API 에러: ${response.body}');
-      return null;
+      throw Failure(Exception('로그인을 실패했습니다'));
     }
 
     debugPrint('로그인 API 성공');
-
-     return AuthData.fromJson(response.body);
+      final authData = AuthData.fromJson(response.body);
+      return Success(authData);
+    } on Exception catch (e) {
+      return Failure(e);
+    }
   }
 }
